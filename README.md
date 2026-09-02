@@ -17,7 +17,7 @@ Name resolved — see `NAMING.md`.
 ## Install
 
 ```
-brew tap OWNER/tap
+brew tap 1declancollier-png/tap
 brew install devdisk
 ```
 
@@ -38,7 +38,7 @@ on screen and ticked one at a time.
 
 ```
 brew uninstall devdisk
-brew untap OWNER/tap
+brew untap 1declancollier-png/tap
 ```
 
 It writes nothing outside its own preferences and leaves nothing behind.

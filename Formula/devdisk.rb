@@ -2,11 +2,11 @@
 # Update `url` and `sha256` at each tag; `brew audit --strict --new devdisk` before submitting.
 class Devdisk < Formula
   desc "Find developer build caches eating your disk, without deleting anything"
-  homepage "https://github.com/OWNER/devdisk"
-  url "https://github.com/OWNER/devdisk/archive/refs/tags/v0.1.0.tar.gz"
+  homepage "https://github.com/1declancollier-png/devdisk"
+  url "https://github.com/1declancollier-png/devdisk/archive/refs/tags/v0.1.0.tar.gz"
   sha256 "REPLACE_AT_TAG"
   license "MIT"
-  head "https://github.com/OWNER/devdisk.git", branch: "main"
+  head "https://github.com/1declancollier-png/devdisk.git", branch: "main"
 
   depends_on xcode: ["15.0", :build]
   depends_on :macos

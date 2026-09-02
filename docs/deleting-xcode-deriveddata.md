@@ -72,7 +72,7 @@ Finder's "Available" number includes purgeable space and will often disagree wit
 
 ---
 
-*[devdisk](https://github.com/OWNER/devdisk) encodes exactly the distinction above: DerivedData,
+*[devdisk](https://github.com/1declancollier-png/devdisk) encodes exactly the distinction above: DerivedData,
 DeviceSupport, previews and the documentation cache are in its
 [manifest](../MANIFEST.md); Archives is deliberately flagged as something you review yourself.
 The manifest is generated from the source, and CI fails if the two disagree.*

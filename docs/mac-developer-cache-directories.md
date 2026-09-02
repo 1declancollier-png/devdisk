@@ -109,7 +109,7 @@ Finder's "Available" figure includes purgeable space, which is why it often disa
 
 ---
 
-*This table is generated from the source of [devdisk](https://github.com/OWNER/devdisk), a Mac
+*This table is generated from the source of [devdisk](https://github.com/1declancollier-png/devdisk), a Mac
 tool that scans exactly these paths and shows you every one before deleting anything. The
 machine-readable version is [MANIFEST.md](../MANIFEST.md), and CI fails if it drifts from the
 code. You do not need the tool to use this page.*
