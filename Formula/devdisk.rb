@@ -4,7 +4,7 @@ class Devdisk < Formula
   desc "Find developer build caches eating your disk, without deleting anything"
   homepage "https://github.com/1declancollier-png/devdisk"
   url "https://github.com/1declancollier-png/devdisk/archive/refs/tags/v0.1.0.tar.gz"
-  sha256 "REPLACE_AT_TAG"
+  sha256 "7960a7cc867c70f9fd2c2dbaddef40bd946b35f53bdd27c42608b09710c13944"
   license "MIT"
   head "https://github.com/1declancollier-png/devdisk.git", branch: "main"
 
@@ -18,7 +18,9 @@ class Devdisk < Formula
   end
 
   test do
-    assert_match "devdisk #{version}", shell_output("#{bin}/devdisk --version && echo devdisk #{version}")
-    assert_match "reclaimable", shell_output("#{bin}/devdisk")
+    assert_equal version.to_s, shell_output(bin/"devdisk --version").strip
+    assert_match "reclaimable", shell_output(bin/"devdisk")
+    # The CLI must never be able to delete. If this ever fails, something has gone very wrong.
+    refute_match "--delete", shell_output(bin/"devdisk --help")
   end
 end
