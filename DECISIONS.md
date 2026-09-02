@@ -151,3 +151,20 @@ The one Phase 5 item that needs no account is done, and it is the most important
 both the scanners and the published document, so the two cannot drift.
 `Scripts/check-manifest.sh` regenerates and diffs; verified it rejects a tampered manifest.
 Wired into CI alongside the 28 safety checks and a no-Xcode bundle build.
+
+## 2026-09-01 — Scanner never enters a build-artifact directory, matched or not.
+
+Previously the walker only stopped descending after a *successful* match. An unmatched
+`node_modules` — one with no sibling `package.json`, e.g. a vendored or committed copy — was
+walked into. Two consequences, one slow and one wrong:
+
+- It walks every file in a directory that by definition contains hundreds of thousands of them.
+- It could match an artifact *nested inside* that directory and propose deleting it. Verified:
+  with the old behaviour the suite reports
+  `ws/vendored/node_modules/inner/node_modules` as a deletion candidate. That is not
+  independently deletable and it is not the user's to remove.
+
+Now the walker skips descendants of any rule-named directory before deciding whether it matches.
+Two checks cover it; mutation-tested by restoring the old ordering, which turns one red.
+
+30 checks, up from 28. MIT LICENSE added to match the Homebrew formula's claim.

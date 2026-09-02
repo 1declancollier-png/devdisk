@@ -104,12 +104,17 @@ public struct ProjectTreeScanner: Scanner {
 
             guard let rule = ProjectRule.rule(forDirectoryNamed: name) else { continue }
 
+            // Never look *inside* a build-artifact directory, matched or not. Descending into an
+            // unmatched node_modules would walk millions of files and could match artifacts
+            // nested within it — which are not independently deletable and are not the user's.
+            walker.skipDescendants()
+
             let parent = url.deletingLastPathComponent()
             let marker = rule.markers
                 .map { parent.appendingPathComponent($0) }
                 .first { fm.fileExists(atPath: $0.path) }
 
-            // No marker: this is a directory that merely shares a name. Leave it, keep walking in.
+            // No marker: a directory that merely shares the name. Leave it entirely alone.
             guard let marker else { continue }
 
             found.append(Candidate(
@@ -119,7 +124,6 @@ public struct ProjectTreeScanner: Scanner {
                 kind: .projectArtifact,
                 justification: marker
             ))
-            walker.skipDescendants()
         }
         return found
     }

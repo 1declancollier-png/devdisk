@@ -379,4 +379,32 @@ Harness.test("forgetting a root removes only that one") {
     }
 }
 
+Harness.test("never descends into a build-artifact directory, matched or not") {
+    withFixture { f in
+        let root = try f.dir("ws")
+        // An unmatched node_modules (no sibling package.json) containing a nested package that
+        // *would* match if the walker went inside. It must not.
+        try f.dir("ws/vendored/node_modules")
+        try f.file("ws/vendored/node_modules/inner/package.json", "{}")
+        try f.dir("ws/vendored/node_modules/inner/node_modules")
+
+        let found = try ProjectTreeScanner(root: root).enumerate()
+        Harness.expect(found.isEmpty,
+                       "descended into an unmatched artifact directory: \(found.map(\.url.path))")
+    }
+}
+
+Harness.test("a matched artifact is reported once, not once per nested copy") {
+    withFixture { f in
+        let root = try f.dir("ws")
+        try f.file("ws/app/package.json", "{}")
+        try f.file("ws/app/node_modules/dep/package.json", "{}")
+        try f.dir("ws/app/node_modules/dep/node_modules")
+
+        let found = try ProjectTreeScanner(root: root).enumerate()
+        Harness.expectEqual(found.count, 1, "nested node_modules reported separately")
+        Harness.expectEqual(found.first?.url.lastPathComponent, "node_modules")
+    }
+}
+
 Harness.report()
