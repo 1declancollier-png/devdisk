@@ -79,3 +79,28 @@ comment in `bundle.sh` now says what is actually true.
 
 **No delete affordance exists in this build.** Not a hidden flag, not a disabled button —
 `Deleter` is in the library and the app never references it.
+
+## 2026-09-01 — Phase 3 done. Deletion exists, guarded and atomic.
+
+Per-item checkboxes only. No select-all, no "clean everything" — SPEC.md §6.1. This costs
+nothing in practice because candidates are *top-level children* of a cache, so the real counts
+are single digits (npm cache: 3 items, DerivedData: 2). Per-item selection would have been
+hostile if candidates were leaf files; they are not.
+
+Deletion is `FileManager.trashItem`, never `unlink`. The confirmation names the count and the
+size and says the items can be put back from Finder, because they can.
+
+**Batch deletion is all-or-nothing.** `Deleter` validates every candidate before removing any,
+so a selection containing one unsafe item removes nothing at all rather than half-executing.
+Mutation-tested: switching to validate-as-you-go turns 2 checks red, one of them on the real
+filesystem.
+
+22 checks now, up from 19. The three new ones use the production `TrashRemover` against real
+files: an item leaves its original path, lands in the Trash with contents intact, and can be
+moved back; unselected siblings are untouched; an invalid batch trashes nothing.
+`Deleter.Remover.remove` now returns the destination URL so recoverability is provable rather
+than assumed — that return value is also what a future Undo would be built on.
+
+**Not done by me:** the first deletion of real user data. The app is built and verified against
+fixtures I created and cleaned up; running it against the actual 275 MB on this machine is the
+owner's call, not the build's.

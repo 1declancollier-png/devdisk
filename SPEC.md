@@ -120,8 +120,8 @@ The number before any permission ask is the activation moment. Do not reorder th
 **Phase 2 — UI, dry-run only. ✅ DONE 2026-09-01.** The §7 sequence. Expandable path lists. No delete button exists.
 *Gate met:* clean checkout → `./Scripts/bundle.sh` → `open .build/devdisk.app` → a real number, no permission prompt. Not `xcodebuild`: the bundle is assembled from `swift build` + `codesign` so anyone auditing the delete-path claims can reproduce the binary without a 10 GB Xcode install.
 
-**Phase 3 — deletion.** Per-item selection, move-to-Trash, undo via Finder.
-*Gate:* a test proving deletion never touches a path outside the selected candidates; manual verification that every deleted item is recoverable from Trash.
+**Phase 3 — deletion. ✅ DONE 2026-09-01.** Per-item selection, move-to-Trash, undo via Finder.
+*Gate met:* 22 checks green, three of them exercising the real `TrashRemover` on real files — unselected siblings untouched, trashed items recoverable and contents intact, invalid batches trash nothing. Atomicity mutation-tested.
 
 **Phase 4 — Docker + project scanners.** Folder selection, security-scoped bookmarks, Docker report-and-prune.
 *Gate:* Docker absent → scanner hidden, no error. Bookmark survives relaunch.

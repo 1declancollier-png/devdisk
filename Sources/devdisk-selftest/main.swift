@@ -246,4 +246,73 @@ Harness.test("home cache scanner on a missing directory returns empty") {
     }
 }
 
+// MARK: Phase 3 gate — real Trash round-trip, on the real filesystem
+//
+// These use the production TrashRemover, not the spy. They create their own fixtures and put
+// each one back afterwards, so running the suite never leaves litter in the user's Trash.
+
+Harness.test("trashed item leaves its original location and is recoverable") {
+    withFixture { f in
+        let root = try f.dir("root")
+        let doomed = try f.dir("root/doomed")
+        try f.file("root/doomed/marker.txt", "recover me")
+
+        let landed = try Deleter().delete(
+            Candidate(scannerID: "t", url: doomed, root: root, kind: .homeCache))
+
+        Harness.expect(!f.exists(doomed), "item still at its original path after trashing")
+        guard let landed else { return Harness.expect(false, "TrashRemover reported no destination") }
+        Harness.expect(FileManager.default.fileExists(atPath: landed.path),
+                       "item is not in the Trash at \(landed.path)")
+        Harness.expect(FileManager.default.fileExists(atPath: landed.appendingPathComponent("marker.txt").path),
+                       "contents did not survive the move")
+
+        // Recoverable: put it back where it came from, exactly as Finder's Put Back would.
+        try FileManager.default.moveItem(at: landed, to: doomed)
+        Harness.expect(f.exists(doomed), "could not restore from the Trash")
+    }
+}
+
+Harness.test("deleting a selection leaves unselected siblings untouched") {
+    withFixture { f in
+        let root = try f.dir("root")
+        let picked = try f.dir("root/picked")
+        let keepA = try f.dir("root/keep-a")
+        let keepB = try f.dir("root/keep-b")
+        try f.file("root/keep-a/precious.txt", "must survive")
+
+        let landed = try Deleter().delete([
+            Candidate(scannerID: "t", url: picked, root: root, kind: .homeCache)
+        ])
+
+        Harness.expect(!f.exists(picked), "selected item was not removed")
+        Harness.expect(f.exists(keepA), "an unselected sibling was removed")
+        Harness.expect(f.exists(keepB), "an unselected sibling was removed")
+        Harness.expect(f.exists(keepA.appendingPathComponent("precious.txt")),
+                       "contents of an unselected sibling were touched")
+
+        for u in landed { try? FileManager.default.removeItem(at: u) }
+    }
+}
+
+Harness.test("a batch containing one unsafe candidate trashes nothing on the real filesystem") {
+    withFixture { f in
+        let root = try f.dir("root")
+        let good = try f.dir("root/good")
+        let outside = try f.dir("outside/bystander")
+        try f.file("outside/bystander/keep.txt", "untouchable")
+
+        do {
+            _ = try Deleter().delete([
+                Candidate(scannerID: "t", url: good,    root: root, kind: .homeCache),
+                Candidate(scannerID: "t", url: outside, root: root, kind: .homeCache),
+            ])
+            Harness.expect(false, "batch with an out-of-root member succeeded")
+        } catch {}
+
+        Harness.expect(f.exists(good), "a valid item was trashed even though the batch was invalid")
+        Harness.expect(f.exists(outside), "the out-of-root item was trashed")
+    }
+}
+
 Harness.report()

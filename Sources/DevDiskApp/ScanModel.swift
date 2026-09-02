@@ -20,7 +20,50 @@ final class ScanModel {
     private(set) var finishedAt: Date?
     private(set) var projectRoots: [URL] = []
 
+    /// Keyed by path. Nothing is ever selected by default — the user ticks each item.
+    /// Candidates are top-level children of a cache, so real counts are small (single digits),
+    /// which is what makes per-item selection reasonable rather than hostile.
+    private(set) var selected: Set<String> = []
+    private(set) var lastError: String?
+
     var hasResults: Bool { !groups.isEmpty }
+
+    // MARK: selection
+
+    func isSelected(_ c: Candidate) -> Bool { selected.contains(c.url.path) }
+
+    func toggle(_ c: Candidate) {
+        if selected.contains(c.url.path) { selected.remove(c.url.path) }
+        else { selected.insert(c.url.path) }
+    }
+
+    var selectedCandidates: [Candidate] {
+        groups.flatMap(\.candidates).filter { selected.contains($0.url.path) }
+    }
+    var selectedCount: Int { selectedCandidates.count }
+    var selectedBytes: Int64 { selectedCandidates.reduce(0) { $0 + $1.sizeBytes } }
+
+    // MARK: deletion
+
+    /// Moves exactly the ticked items to the Trash. `Deleter` validates every candidate against
+    /// SafetyGuard before removing any of them, so an unsafe selection removes nothing at all.
+    func deleteSelected() async {
+        let batch = selectedCandidates
+        guard !batch.isEmpty else { return }
+        lastError = nil
+        do {
+            try Deleter().delete(batch)
+            selected.removeAll()
+            groups.removeAll()
+            total = 0
+            await scanHomeCaches()
+            let roots = projectRoots
+            projectRoots.removeAll()
+            for r in roots { await scanProject(at: r) }
+        } catch {
+            lastError = "\(error)"
+        }
+    }
 
     /// Runs on launch with no prompt of any kind — Phase 0 established that none of these
     /// locations needs a permission grant. Do not add one.

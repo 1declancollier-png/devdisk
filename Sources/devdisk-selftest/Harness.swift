@@ -63,7 +63,8 @@ enum Harness {
 /// Lets the suite prove the guard runs *before* anything is removed.
 final class SpyRemover: Deleter.Remover, @unchecked Sendable {
     var removed: [URL] = []
-    func remove(_ url: URL) throws { removed.append(url) }
+    @discardableResult
+    func remove(_ url: URL) throws -> URL? { removed.append(url); return nil }
 }
 
 /// Fresh scratch tree per test.

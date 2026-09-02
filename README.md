@@ -10,7 +10,7 @@ Working name. See `SPEC.md` §10 before shipping under it.
 - **Phase 0** ✅ — needs no Full Disk Access. Proven, not assumed: `tools/phase0/`
 - **Phase 1** ✅ — scanner core + 19 safety checks, mutation-tested
 - **Phase 2** ✅ — SwiftUI app, dry-run only, builds without Xcode
-- **Phase 3** — deletion (move to Trash, per-item selection)
+- **Phase 3** ✅ — deletion: per-item selection, move to Trash, all-or-nothing batches
 - **Phase 4** — Docker + project scanners
 - **Phase 5** — ship
 
@@ -25,8 +25,9 @@ swift run devdisk-selftest                # the safety gate; non-zero exit on fa
 open .build/devdisk.app
 ```
 
-`devdisk-scan` has no delete path compiled in. `Deleter` lives in the library, guarded by
-`SafetyGuard`, and nothing calls it yet.
+`devdisk-scan` has no delete path compiled in — the CLI can only ever report. The app can
+delete, one ticked item at a time, always to the Trash, and a batch containing anything unsafe
+removes nothing at all.
 
 ## The five invariants
 
@@ -36,7 +37,7 @@ Every one is an executable check in `Sources/devdisk-selftest`:
 2. Never follow a symlink out of that root
 3. Never delete a directory containing `.git`
 4. Never match a build artifact by directory name alone — a sibling marker file is required
-5. Deletion is validated first, batched atomically, and goes to the Trash
+5. Deletion is validated first, batched atomically, and goes to the Trash — never `unlink`
 
 ## Documents
 

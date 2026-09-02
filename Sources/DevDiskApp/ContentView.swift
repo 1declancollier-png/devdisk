@@ -5,6 +5,7 @@ import DevDiskCore
 struct ContentView: View {
     @State private var model = ScanModel()
     @State private var expanded: Set<String> = []
+    @State private var confirming = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -97,9 +98,16 @@ struct ContentView: View {
         .buttonStyle(.plain)
     }
 
-    /// Every literal path, before anything can be deleted. This is the product.
+    /// Every literal path, ticked one at a time. Nothing is selected by default, and there is
+    /// no select-all — seeing what you are about to remove is the product.
     private func pathRow(_ c: Candidate) -> some View {
         HStack(spacing: 8) {
+            Toggle(isOn: Binding(
+                get: { model.isSelected(c) },
+                set: { _ in model.toggle(c) }
+            )) { EmptyView() }
+                .toggleStyle(.checkbox)
+                .labelsHidden()
             Text(abbreviate(c.url))
                 .font(.system(.caption, design: .monospaced))
                 .foregroundStyle(.secondary)
@@ -112,9 +120,11 @@ struct ContentView: View {
                 .monospacedDigit()
                 .foregroundStyle(.tertiary)
         }
-        .padding(.leading, 52)
+        .padding(.leading, 44)
         .padding(.trailing, 20)
         .padding(.vertical, 2)
+        .contentShape(.rect)
+        .onTapGesture { model.toggle(c) }
     }
 
     private func abbreviate(_ url: URL) -> String {
@@ -147,12 +157,37 @@ struct ContentView: View {
         HStack {
             Button("Add project folder…") { chooseProject() }
             Spacer()
-            Text("Dry run — this build has no delete function.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            if let err = model.lastError {
+                Text(err).font(.caption).foregroundStyle(.red).lineLimit(1)
+            } else if model.selectedCount > 0 {
+                Text("\(model.selectedCount) selected")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Button {
+                confirming = true
+            } label: {
+                Text(model.selectedCount == 0
+                     ? "Move to Trash"
+                     : "Move \(model.selectedCount) to Trash — \(SizeCalculator.human(model.selectedBytes))")
+            }
+            .disabled(model.selectedCount == 0)
+            .keyboardShortcut(.delete, modifiers: [.command])
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
+        .confirmationDialog(
+            "Move \(model.selectedCount) item\(model.selectedCount == 1 ? "" : "s") to the Trash?",
+            isPresented: $confirming,
+            titleVisibility: .visible
+        ) {
+            Button("Move to Trash", role: .destructive) {
+                Task { await model.deleteSelected() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("\(SizeCalculator.human(model.selectedBytes)) will be moved to the Trash. "
+                 + "Nothing is erased — you can put it all back from Finder.")
+        }
     }
 
     private func chooseProject() {
