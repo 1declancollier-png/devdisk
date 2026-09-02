@@ -22,7 +22,7 @@ struct ContentView: View {
             footer
         }
         .frame(minWidth: 620, minHeight: 480)
-        .task { await model.scanHomeCaches() }
+        .task { await model.startup() }
     }
 
     // MARK: the number — first thing on screen, before anything is asked of the user
@@ -63,8 +63,46 @@ struct ContentView: View {
                     }
                     Divider().opacity(0.5)
                 }
+                if let d = model.docker { dockerSection(d) }
             }
         }
+    }
+
+    /// Docker is report-only. It cannot be moved to the Trash, so it is never selectable and
+    /// never goes through the deleter — the user runs the command themselves. See DECISIONS.md.
+    private func dockerSection(_ d: DockerReport) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Docker").fontWeight(.medium)
+                Spacer()
+                Text(SizeCalculator.human(d.reclaimable)).monospacedDigit().foregroundStyle(.secondary)
+            }
+            ForEach(d.lines, id: \.type) { line in
+                HStack {
+                    Text(line.type).font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Text("\(SizeCalculator.human(line.reclaimable)) reclaimable of \(SizeCalculator.human(line.size))")
+                        .font(.caption).foregroundStyle(.tertiary)
+                }
+            }
+            HStack(spacing: 8) {
+                Text(d.pruneCommand)
+                    .font(.system(.caption, design: .monospaced))
+                    .textSelection(.enabled)
+                    .padding(.horizontal, 8).padding(.vertical, 5)
+                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 6))
+                Button("Copy") {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(d.pruneCommand, forType: .string)
+                }
+                .controlSize(.small)
+            }
+            Text("Docker reclaim cannot go to the Trash, so this app will not run it for you. "
+                 + "Run it yourself when you are ready.")
+                .font(.caption2).foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
     }
 
     private func groupRow(_ group: ScanGroup) -> some View {

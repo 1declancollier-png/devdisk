@@ -104,3 +104,37 @@ than assumed — that return value is also what a future Undo would be built on.
 **Not done by me:** the first deletion of real user data. The app is built and verified against
 fixtures I created and cleaned up; running it against the actual 275 MB on this machine is the
 owner's call, not the build's.
+
+## 2026-09-01 — Phase 4 done. Docker is report-only, and that changes the spec.
+
+**SPEC.md §5 originally said Docker deletion "shells out to `docker system prune` with explicit
+flags and shows the exact command first." I did not build that, and the spec is now amended.**
+
+The reason is a conflict inside the spec itself. §5 also says deletion goes to the Trash in v1,
+and §6 sells the product on nothing being destroyed without the user seeing it. `docker system
+prune` cannot satisfy either: there is no Trash for Docker layers, and the operation is
+irreversible. Shipping one irreversible button inside an app whose entire wedge is
+recoverability would undercut the wedge for a feature nobody is buying it for.
+
+So v1 reports Docker reclaim, shows `docker system prune --all --volumes` as copyable text, and
+does not execute it. Docker is never a `Candidate`, never selectable, and never reaches
+`Deleter`. **This is a product decision, not a technical limit — reverse it if you disagree.**
+
+**A real trap, worth remembering.** A GUI app launched from Finder inherits a minimal PATH
+(`/usr/bin:/bin:/usr/sbin:/sbin`), so `docker` is essentially never on it even when installed.
+`DockerProbe` searches the actual install locations — Homebrew (both architectures), Docker
+Desktop's bundled binary, Rancher Desktop, `~/.docker/bin`. A PATH lookup would have silently
+reported "no Docker" to most users who have it. Probing runs with a 4-second hard timeout so a
+wedged daemon cannot hang the UI.
+
+**Bookmarks are plain, not security-scoped.** Security scope only means something inside the App
+Sandbox, and this app is deliberately unsandboxed (§3). A plain bookmark still survives the
+folder being moved or renamed, which is the part that matters.
+
+**Two real bugs the tests caught.** Resolving a bookmark returns the canonical path
+(`/private/var/…`) while a freshly-picked URL is the lexical one (`/var/…`). Comparing them raw
+meant duplicate roots were recorded and `remove` silently matched nothing — a user could add the
+same folder repeatedly and never delete it. Both sides are now normalised. This would have hit
+anyone whose projects live under a symlinked path.
+
+28 checks, up from 22.

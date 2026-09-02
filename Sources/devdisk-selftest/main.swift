@@ -315,4 +315,68 @@ Harness.test("a batch containing one unsafe candidate trashes nothing on the rea
     }
 }
 
+// MARK: Phase 4 gate — Docker absence, size parsing, bookmark persistence
+
+Harness.test("absent Docker yields nil, not an error") {
+    // On a machine with Docker installed this check is vacuous; it is the absent path that has
+    // to be silent, because that is the common case for non-container developers.
+    if DockerProbe.locate() == nil {
+        Harness.expect(DockerProbe.report() == nil, "reported something with no docker binary present")
+    }
+}
+
+Harness.test("docker size strings parse to bytes") {
+    Harness.expectEqual(DockerProbe.parseSize("1.5GB"), 1_500_000_000, "GB")
+    Harness.expectEqual(DockerProbe.parseSize("512.4MB (100%)"), 512_400_000, "MB with percentage suffix")
+    Harness.expectEqual(DockerProbe.parseSize("0B"), 0, "zero")
+    Harness.expectEqual(DockerProbe.parseSize("garbage"), 0, "unparseable must be 0, never a guess")
+    Harness.expect(DockerProbe.parseSize("2.25TB") == 2_250_000_000_000, "TB")
+}
+
+Harness.test("project roots survive a relaunch") {
+    withFixture { f in
+        let suite = UserDefaults(suiteName: "devdisk.selftest.\(UUID().uuidString)")!
+        let project = try f.dir("MyProject")
+
+        ProjectRoots(defaults: suite).add(project)
+        // A fresh instance reading the same store is exactly what the next launch does.
+        let reloaded = ProjectRoots(defaults: suite).load()
+        Harness.expectEqual(reloaded.map(\.lastPathComponent), ["MyProject"], "root did not survive")
+    }
+}
+
+Harness.test("the same folder is never remembered twice") {
+    withFixture { f in
+        let suite = UserDefaults(suiteName: "devdisk.selftest.\(UUID().uuidString)")!
+        let project = try f.dir("MyProject")
+        let store = ProjectRoots(defaults: suite)
+        store.add(project)
+        store.add(project)
+        Harness.expectEqual(store.load().count, 1, "duplicate root recorded")
+    }
+}
+
+Harness.test("a remembered folder that no longer exists is dropped silently") {
+    withFixture { f in
+        let suite = UserDefaults(suiteName: "devdisk.selftest.\(UUID().uuidString)")!
+        let gone = try f.dir("Temporary")
+        let store = ProjectRoots(defaults: suite)
+        store.add(gone)
+        try FileManager.default.removeItem(at: gone)
+        Harness.expectEqual(store.load().count, 0, "resolved a bookmark to a deleted folder")
+    }
+}
+
+Harness.test("forgetting a root removes only that one") {
+    withFixture { f in
+        let suite = UserDefaults(suiteName: "devdisk.selftest.\(UUID().uuidString)")!
+        let a = try f.dir("ProjectA")
+        let b = try f.dir("ProjectB")
+        let store = ProjectRoots(defaults: suite)
+        store.add(a); store.add(b)
+        store.remove(a)
+        Harness.expectEqual(store.load().map(\.lastPathComponent), ["ProjectB"])
+    }
+}
+
 Harness.report()

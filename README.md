@@ -11,7 +11,7 @@ Working name. See `SPEC.md` §10 before shipping under it.
 - **Phase 1** ✅ — scanner core + 19 safety checks, mutation-tested
 - **Phase 2** ✅ — SwiftUI app, dry-run only, builds without Xcode
 - **Phase 3** ✅ — deletion: per-item selection, move to Trash, all-or-nothing batches
-- **Phase 4** — Docker + project scanners
+- **Phase 4** ✅ — Docker report, remembered project folders
 - **Phase 5** — ship
 
 ## Run it

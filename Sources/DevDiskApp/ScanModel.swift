@@ -26,6 +26,12 @@ final class ScanModel {
     private(set) var selected: Set<String> = []
     private(set) var lastError: String?
 
+    /// nil whenever Docker is absent or its daemon is not answering. Both are ordinary states:
+    /// the section simply does not appear. Never surfaced as an error.
+    private(set) var docker: DockerReport?
+
+    private let rootStore = ProjectRoots()
+
     var hasResults: Bool { !groups.isEmpty }
 
     // MARK: selection
@@ -59,10 +65,19 @@ final class ScanModel {
             await scanHomeCaches()
             let roots = projectRoots
             projectRoots.removeAll()
-            for r in roots { await scanProject(at: r) }
+            for r in roots { await scanProject(at: r, remember: false) }
+            docker = await Task.detached(priority: .utility) { DockerProbe.report() }.value
         } catch {
             lastError = "\(error)"
         }
+    }
+
+    /// Everything the app does on launch: caches, remembered project folders, Docker probe.
+    /// No prompt of any kind.
+    func startup() async {
+        await scanHomeCaches()
+        for root in rootStore.load() { await scanProject(at: root, remember: false) }
+        docker = await Task.detached(priority: .utility) { DockerProbe.report() }.value
     }
 
     /// Runs on launch with no prompt of any kind — Phase 0 established that none of these
@@ -91,9 +106,10 @@ final class ScanModel {
 
     /// The only path that involves the user picking anything. Selection *is* the grant —
     /// no TCC prompt is involved, even for ~/Documents or ~/Desktop.
-    func scanProject(at root: URL) async {
+    func scanProject(at root: URL, remember: Bool = true) async {
         guard !projectRoots.contains(root) else { return }
         projectRoots.append(root)
+        if remember { rootStore.add(root) }
         isScanning = true
         defer { isScanning = false }
 
@@ -111,6 +127,13 @@ final class ScanModel {
 
         if let found { merge([found]) }
         finishedAt = .now
+    }
+
+    func forgetProject(_ root: URL) {
+        rootStore.remove(root)
+        projectRoots.removeAll { $0 == root }
+        groups.removeAll { $0.id == "project:\(root.path)" }
+        total = groups.reduce(0) { $0 + $1.bytes }
     }
 
     private func merge(_ incoming: [ScanGroup]) {

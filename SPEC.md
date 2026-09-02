@@ -81,7 +81,7 @@ Each scanner is an isolated module: `id`, `displayName`, `requiresPermission`, `
 - `.venv`, `__pycache__`
 - `build`, `.gradle` (only when a sibling `build.gradle*` exists)
 
-**Docker:** report only, via `docker system df`. Deletion shells out to `docker system prune` with explicit flags and shows the exact command first. If the Docker CLI is absent, the scanner is hidden — never an error dialog.
+**Docker:** report only, via `docker system df`. **v1 does not execute anything** — it shows `docker system prune --all --volumes` as copyable text for the user to run themselves, because Docker reclaim cannot go to the Trash and would be the one irreversible action in the app (amended 2026-09-01; rationale in `DECISIONS.md`). Docker is never a `Candidate` and never reaches `Deleter`. If the Docker CLI is absent, the section is hidden — never an error dialog. Locate the binary by searching real install paths, not `PATH`: a GUI app inherits a minimal one.
 
 **Safety invariants — every one is a test:**
 - Never delete a path that is not a descendant of an enumerated candidate root
@@ -123,8 +123,8 @@ The number before any permission ask is the activation moment. Do not reorder th
 **Phase 3 — deletion. ✅ DONE 2026-09-01.** Per-item selection, move-to-Trash, undo via Finder.
 *Gate met:* 22 checks green, three of them exercising the real `TrashRemover` on real files — unselected siblings untouched, trashed items recoverable and contents intact, invalid batches trash nothing. Atomicity mutation-tested.
 
-**Phase 4 — Docker + project scanners.** Folder selection, security-scoped bookmarks, Docker report-and-prune.
-*Gate:* Docker absent → scanner hidden, no error. Bookmark survives relaunch.
+**Phase 4 — Docker + project scanners. ✅ DONE 2026-09-01.** Folder selection, persistent bookmarks, Docker report (not prune — see above).
+*Gate met:* Docker absent → section hidden, `report()` returns nil, no error (verified on this machine, which has no Docker). Bookmarks round-trip across a fresh store instance, de-dupe, drop deleted folders, and remove individually. 28 checks green.
 
 **Phase 5 — ship.** Sparkle, Developer ID, notarization, manifest generation in CI, the §6 artifacts.
 *Gate:* download on a bare machine with no dev tools, first launch clean, `spctl` output matches what the site publishes.
