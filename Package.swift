@@ -8,6 +8,7 @@ let package = Package(
         .library(name: "DevDiskCore", targets: ["DevDiskCore"]),
         .executable(name: "devdisk-scan", targets: ["devdisk-scan"]),
         .executable(name: "devdisk-selftest", targets: ["devdisk-selftest"]),
+        .executable(name: "DevDiskApp", targets: ["DevDiskApp"]),
     ],
     targets: [
         .target(name: "DevDiskCore"),
@@ -16,5 +17,6 @@ let package = Package(
         // both ship with Xcode, and this project builds under Command Line Tools alone.
         // `swift run devdisk-selftest` is the Phase 1 gate. Exits non-zero on any failure.
         .executableTarget(name: "devdisk-selftest", dependencies: ["DevDiskCore"]),
+        .executableTarget(name: "DevDiskApp", dependencies: ["DevDiskCore"]),
     ]
 )

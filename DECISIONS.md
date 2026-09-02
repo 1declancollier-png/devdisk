@@ -58,3 +58,24 @@ turns 2 red. The suite is not vacuous.
 First real dry run (this machine): 275.6 MB across npm cache, SwiftPM cache, DerivedData and
 one project artifact. The scanner has no delete path compiled into it at all — not a flag, not
 a disabled button. `Deleter` exists in the library and nothing calls it yet.
+
+## 2026-09-01 — Phase 2 done. The app bundle is built without Xcode.
+
+`Scripts/bundle.sh` assembles `devdisk.app` from `swift build` + a generated Info.plist +
+`codesign`. Deliberately not `xcodebuild`: requiring a full Xcode install to produce the binary
+would make it unreproducible for exactly the people the trust wedge is aimed at — anyone who
+wants to check that the delete paths are what `MANIFEST.md` says.
+
+**Verification, and an honest note on it.** Screen recording is denied to the build shell, so
+the window was verified through `CGWindowListCopyWindowInfo` (geometry needs no such
+permission): 720x560 at (280,151), onscreen, alpha 1.0, layer 0. The reclaimable figure itself
+is verified by `devdisk-scan`, which shares the scanner code.
+
+While debugging an apparently missing window I added `NSPrincipalClass` to the plist and
+asserted it was required. It is not — I tested by removing it and the window still appears. The
+real cause was launching the bare executable from a background shell, which LaunchServices
+never activates; `open -a` on the bundle works. The key is kept because Xcode emits it, but the
+comment in `bundle.sh` now says what is actually true.
+
+**No delete affordance exists in this build.** Not a hidden flag, not a disabled button —
+`Deleter` is in the library and the app never references it.

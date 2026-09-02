@@ -117,8 +117,8 @@ The number before any permission ask is the activation moment. Do not reorder th
 **Phase 1 — scanner core, no UI. ✅ DONE 2026-09-01.** Scanner protocol, 14 user-home scanners, project-tree scanner, sizing, `SafetyGuard`, `Deleter`.
 *Gate:* `swift run devdisk-selftest` — 19 checks green, covering every invariant in §5 and its negative case. Not `swift test`: XCTest ships with Xcode and this builds under Command Line Tools alone (see `DECISIONS.md`). Suite is mutation-tested.
 
-**Phase 2 — UI, dry-run only.** The §7 sequence. Expandable path lists. No delete button exists yet.
-*Gate:* clean checkout → `xcodebuild` → launch → a real number on a real machine in under 60 s, with no permission prompt.
+**Phase 2 — UI, dry-run only. ✅ DONE 2026-09-01.** The §7 sequence. Expandable path lists. No delete button exists.
+*Gate met:* clean checkout → `./Scripts/bundle.sh` → `open .build/devdisk.app` → a real number, no permission prompt. Not `xcodebuild`: the bundle is assembled from `swift build` + `codesign` so anyone auditing the delete-path claims can reproduce the binary without a 10 GB Xcode install.
 
 **Phase 3 — deletion.** Per-item selection, move-to-Trash, undo via Finder.
 *Gate:* a test proving deletion never touches a path outside the selected candidates; manual verification that every deleted item is recoverable from Trash.

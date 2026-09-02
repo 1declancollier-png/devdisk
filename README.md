@@ -9,7 +9,7 @@ Working name. See `SPEC.md` §10 before shipping under it.
 
 - **Phase 0** ✅ — needs no Full Disk Access. Proven, not assumed: `tools/phase0/`
 - **Phase 1** ✅ — scanner core + 19 safety checks, mutation-tested
-- **Phase 2** — UI, dry-run only
+- **Phase 2** ✅ — SwiftUI app, dry-run only, builds without Xcode
 - **Phase 3** — deletion (move to Trash, per-item selection)
 - **Phase 4** — Docker + project scanners
 - **Phase 5** — ship
@@ -20,6 +20,9 @@ Working name. See `SPEC.md` §10 before shipping under it.
 swift run devdisk-scan                    # dry run, home caches only
 swift run devdisk-scan ~/Developer        # plus a project tree
 swift run devdisk-selftest                # the safety gate; non-zero exit on failure
+
+./Scripts/bundle.sh                       # build devdisk.app (no Xcode required)
+open .build/devdisk.app
 ```
 
 `devdisk-scan` has no delete path compiled in. `Deleter` lives in the library, guarded by
