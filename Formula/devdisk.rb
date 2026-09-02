@@ -18,9 +18,9 @@ class Devdisk < Formula
   end
 
   test do
-    assert_equal version.to_s, shell_output(bin/"devdisk --version").strip
+    assert_equal version.to_s, shell_output("#{bin}/devdisk --version").strip
     assert_match "reclaimable", shell_output(bin/"devdisk")
     # The CLI must never be able to delete. If this ever fails, something has gone very wrong.
-    refute_match "--delete", shell_output(bin/"devdisk --help")
+    refute_match "--delete", shell_output("#{bin}/devdisk --help")
   end
 end
