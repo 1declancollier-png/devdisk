@@ -10,6 +10,7 @@ struct ContentView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
+            if model.movedToTrashBytes > 0 { trashNotice }
             Divider()
             if model.groups.isEmpty && model.isScanning {
                 scanningPlaceholder
@@ -47,6 +48,37 @@ struct ContentView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
+    }
+
+    /// The honest correction to the headline number. Moving to the Trash is recoverable, which
+    /// is the point — but recoverable means still on the disk, and someone runs this because
+    /// their disk is full. Saying "freed" here would be a lie at the worst possible moment.
+    private var trashNotice: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "trash")
+                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Moved \(SizeCalculator.human(model.movedToTrashBytes)) to the Trash.")
+                    .fontWeight(.medium)
+                Text("That space is still on your disk. Empty the Trash to actually get it back.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button("Open Trash") {
+                NSWorkspace.shared.open(URL(fileURLWithPath: NSHomeDirectory() + "/.Trash"))
+            }
+            Button {
+                model.dismissTrashNotice()
+            } label: {
+                Image(systemName: "xmark").font(.caption)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(.quaternary.opacity(0.4))
     }
 
     // MARK: results
@@ -223,8 +255,8 @@ struct ContentView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("\(SizeCalculator.human(model.selectedBytes)) will be moved to the Trash. "
-                 + "Nothing is erased — you can put it all back from Finder.")
+            Text("\(SizeCalculator.human(model.selectedBytes)) will be moved to the Trash — "
+                 + "recoverable from Finder, and still taking up disk space until you empty it.")
         }
     }
 

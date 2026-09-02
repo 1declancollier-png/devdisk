@@ -17,12 +17,40 @@ Working name. See `SPEC.md` §10 before shipping under it.
 ## Install
 
 ```
-brew install OWNER/tap/devdisk
-devdisk ~/Developer
+brew tap OWNER/tap
+brew install devdisk
 ```
 
-Builds from source, so it needs no code signing and never meets Gatekeeper. The `.app` is a
-separate download once it is notarized.
+Two commands, not one: a new project does not meet homebrew-core's notability bar, so it lives
+in a tap. It builds from source on your machine, so it needs no code signing and never meets
+Gatekeeper.
+
+```
+devdisk                 # report on your build caches
+devdisk ~/Developer     # also scan a project tree
+devdisk --json          # machine-readable
+```
+
+**The CLI only ever reports. It cannot delete.** Deletion lives in the app, where every path is
+on screen and ticked one at a time.
+
+### Uninstall
+
+```
+brew uninstall devdisk
+brew untap OWNER/tap
+```
+
+It writes nothing outside its own preferences and leaves nothing behind.
+
+## Does it need Full Disk Access? No — and here is the proof
+
+Not a claim. `tools/phase0/` contains the probe and the transcript of a run from a fresh app
+bundle with zero permissions granted: every cache read fine, and both Full-Disk-Access-gated
+control paths were denied. The controls are what make it evidence rather than an assertion —
+if they had passed, the runner already had access and the result would prove nothing.
+
+Reproduce it yourself in about a minute: `tools/phase0/README.md`.
 
 ## Run it from a checkout
 

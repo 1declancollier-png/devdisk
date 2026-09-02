@@ -168,3 +168,24 @@ Now the walker skips descendants of any rule-named directory before deciding whe
 Two checks cover it; mutation-tested by restoring the old ordering, which turns one red.
 
 30 checks, up from 28. MIT LICENSE added to match the Homebrew formula's claim.
+
+## 2026-09-01 — "Moved to the Trash" is not "reclaimed". The UI now says so.
+
+Raised by the review panel and it is the sharpest finding of the session: moving 275 MB to the
+Trash frees **zero** bytes until the Trash is emptied. Someone runs a disk tool when their disk
+is full, so a headline reading "275 MB reclaimable" followed by a deletion that changes nothing
+in Finder is false at the exact moment it matters — on a product whose entire brand is honesty.
+
+The safety mechanism (Trash, so mistakes are recoverable) is in direct tension with the primary
+outcome (get the space back). Both are kept, and the tension is stated rather than hidden:
+
+- After any deletion the app shows how much was **moved**, says the space is still on the disk,
+  and offers to open the Trash.
+- The confirmation dialog says "recoverable from Finder, and still taking up disk space until
+  you empty it."
+- The words "freed" and "reclaimed" are never used for something only moved.
+- `LIMITATIONS.md` also documents the APFS local-snapshot case, where even emptying the Trash
+  may not move the number.
+
+Considered and rejected: emptying the Trash on the user's behalf. That would destroy the
+recoverability the product is sold on, and the Trash contains things this app did not put there.

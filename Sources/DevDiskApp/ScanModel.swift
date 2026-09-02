@@ -30,6 +30,11 @@ final class ScanModel {
     /// the section simply does not appear. Never surfaced as an error.
     private(set) var docker: DockerReport?
 
+    /// Moving to the Trash frees NO disk space until the Trash is emptied — and on a disk-full
+    /// machine, which is when people run this, that difference is the whole point. Never say
+    /// "freed" or "reclaimed" about something that has only been moved.
+    private(set) var movedToTrashBytes: Int64 = 0
+
     private let rootStore = ProjectRoots()
 
     var hasResults: Bool { !groups.isEmpty }
@@ -57,8 +62,10 @@ final class ScanModel {
         let batch = selectedCandidates
         guard !batch.isEmpty else { return }
         lastError = nil
+        let movedBytes = batch.reduce(0) { $0 + $1.sizeBytes }
         do {
             try Deleter().delete(batch)
+            movedToTrashBytes += movedBytes
             selected.removeAll()
             groups.removeAll()
             total = 0
@@ -128,6 +135,8 @@ final class ScanModel {
         if let found { merge([found]) }
         finishedAt = .now
     }
+
+    func dismissTrashNotice() { movedToTrashBytes = 0 }
 
     func forgetProject(_ root: URL) {
         rootStore.remove(root)

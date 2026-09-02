@@ -44,10 +44,10 @@ public struct HomeCacheScanner: Scanner {
         public let displayName: String
         /// Relative to the user's home directory.
         public let relativePath: String
-    }
-
-    public static let definitions: [Definition] = rawDefinitions.map {
-        Definition(id: $0.0, displayName: $0.1, relativePath: $0.2)
+        /// Which toolchain writes it.
+        public let tool: String
+        /// What brings it back after deletion — the answer to "what do I lose?".
+        public let regeneratedBy: String
     }
 
     /// The cache locations verified readable without any permission in Phase 0.
@@ -55,21 +55,35 @@ public struct HomeCacheScanner: Scanner {
         definitions.map { HomeCacheScanner(id: $0.id, displayName: $0.displayName, root: home.appendingPathComponent($0.relativePath)) }
     }
 
-    private static let rawDefinitions: [(String, String, String)] = [
-            ("xcode-derived",   "Xcode DerivedData",        "Library/Developer/Xcode/DerivedData"),
-            ("xcode-archives",  "Xcode Archives",           "Library/Developer/Xcode/Archives"),
-            ("xcode-devsupport","Xcode iOS DeviceSupport",  "Library/Developer/Xcode/iOS DeviceSupport"),
-            ("swiftpm",         "SwiftPM cache",            "Library/Caches/org.swift.swiftpm"),
-            ("cocoapods",       "CocoaPods cache",          "Library/Caches/CocoaPods"),
-            ("npm",             "npm cache",                ".npm/_cacache"),
-            ("yarn",            "Yarn cache",               "Library/Caches/Yarn"),
-            ("pip",             "pip cache",                "Library/Caches/pip"),
-            ("uv",              "uv cache",                 ".cache/uv"),
-            ("go-mod",          "Go module cache",          "go/pkg/mod"),
-            ("go-build",        "Go build cache",           "Library/Caches/go-build"),
-            ("gradle",          "Gradle cache",             ".gradle/caches"),
-            ("maven",           "Maven repository",         ".m2/repository"),
-            ("cargo",           "Cargo registry cache",     ".cargo/registry/cache"),
+    public static let definitions: [Definition] = [
+        .init(id: "xcode-derived", displayName: "Xcode DerivedData", relativePath: "Library/Developer/Xcode/DerivedData",
+              tool: "Xcode", regeneratedBy: "the next build — you lose the index, so the first rebuild is slow"),
+        .init(id: "xcode-archives", displayName: "Xcode Archives", relativePath: "Library/Developer/Xcode/Archives",
+              tool: "Xcode", regeneratedBy: "NOTHING — these are your shipped dSYMs. Review each one before removing it."),
+        .init(id: "xcode-devsupport", displayName: "Xcode iOS DeviceSupport", relativePath: "Library/Developer/Xcode/iOS DeviceSupport",
+              tool: "Xcode", regeneratedBy: "reconnecting the device, which re-copies symbols (slow, once per OS version)"),
+        .init(id: "swiftpm", displayName: "SwiftPM cache", relativePath: "Library/Caches/org.swift.swiftpm",
+              tool: "Swift Package Manager", regeneratedBy: "the next resolve — re-downloads packages"),
+        .init(id: "cocoapods", displayName: "CocoaPods cache", relativePath: "Library/Caches/CocoaPods",
+              tool: "CocoaPods", regeneratedBy: "pod install"),
+        .init(id: "npm", displayName: "npm cache", relativePath: ".npm/_cacache",
+              tool: "npm", regeneratedBy: "the next install — re-downloads tarballs"),
+        .init(id: "yarn", displayName: "Yarn cache", relativePath: "Library/Caches/Yarn",
+              tool: "Yarn", regeneratedBy: "the next install"),
+        .init(id: "pip", displayName: "pip cache", relativePath: "Library/Caches/pip",
+              tool: "pip", regeneratedBy: "the next install (pip cache purge does the same thing)"),
+        .init(id: "uv", displayName: "uv cache", relativePath: ".cache/uv",
+              tool: "uv", regeneratedBy: "the next sync (uv cache clean does the same thing)"),
+        .init(id: "go-mod", displayName: "Go module cache", relativePath: "go/pkg/mod",
+              tool: "Go", regeneratedBy: "go mod download — note these are read-only, go clean -modcache is the safe way"),
+        .init(id: "go-build", displayName: "Go build cache", relativePath: "Library/Caches/go-build",
+              tool: "Go", regeneratedBy: "the next build — slower until warm"),
+        .init(id: "gradle", displayName: "Gradle cache", relativePath: ".gradle/caches",
+              tool: "Gradle", regeneratedBy: "the next build — re-downloads dependencies"),
+        .init(id: "maven", displayName: "Maven repository", relativePath: ".m2/repository",
+              tool: "Maven", regeneratedBy: "the next build — re-downloads dependencies"),
+        .init(id: "cargo", displayName: "Cargo registry cache", relativePath: ".cargo/registry/cache",
+              tool: "Cargo", regeneratedBy: "the next build — re-downloads crates"),
     ]
 }
 

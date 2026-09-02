@@ -97,4 +97,6 @@ if roots.isEmpty {
 }
 print("")
 print("  Nothing was deleted. This tool cannot delete.")
+print("  Note: the app moves items to the Trash, which does not free disk space")
+print("  until the Trash is emptied.")
 print("")
