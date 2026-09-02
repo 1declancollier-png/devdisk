@@ -3,7 +3,7 @@
 Finds the developer build artifacts and package caches eating your disk — and shows you every
 path before it deletes anything.
 
-Working name. See `SPEC.md` §10 before shipping under it.
+Name resolved — see `NAMING.md`.
 
 ## Status
 
@@ -82,4 +82,7 @@ Every one is an executable check in `Sources/devdisk-selftest`:
 - `SPEC.md` — the build contract: scope, non-goals, phases, gates
 - `DECISIONS.md` — append-only, why things are the way they are
 - `MANIFEST.md` — every path the app can ever delete, generated from the code
+- `PROMISE.md` — what stays free, dated
+- `LIMITATIONS.md` — what it doesn't do, written before anyone asked
+- `NAMING.md` — why it's called this
 - `RESEARCH.md` — competitive landscape, fact-checked; read before arguing with the non-goals

@@ -136,19 +136,11 @@ The number before any permission ask is the activation moment. Do not reorder th
 - Trial: fully functional, time-limited, **no card, no account**.
 - Free companion tool at the top of the funnel: the port-killer (`kill process on port`) from `RESEARCH.md` §17 — small, dev-native, needs no scary permission. Ships as a separate free download, not a crippled tier of this app.
 
-## 10. Naming
+## 10. Naming — RESOLVED 2026-09-02
 
-Unresolved and blocking for launch, not for building. Constraints:
-
-- Not feature-level — must survive adding a second tool
-- Avoid the entire MacKeeper lexical register: no *Clean, Sweep, Optimizer, Booster, Guard, Master, Doctor, Genius, Pro*
-- Unambiguous spelling from sound (it travels through comments and podcasts)
-- Searchable as a bare string — coined or compound, not a dictionary word
-- `.app`/`.com` + GitHub org + one social handle all free simultaneously
-- No `Mac-` / `i-` / `Notch-` prefixes
-- Legible as one glyph at 16 pt
-
-`devdisk` is the folder name. Do not ship it.
+**`devdisk`.** No longer a placeholder. `devdisk.app`, the GitHub org, npm, crates.io, PyPI and
+Homebrew were all verified free. Twelve alternatives were researched and nine were dead on
+collisions; full record and reasoning in `NAMING.md`.
 
 ## 11. Out of scope for this spec
 
