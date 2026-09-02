@@ -1,0 +1,249 @@
+import Foundation
+import DevDiskCore
+
+// The Phase 1 gate. One check per safety invariant in SPEC.md §5, each with its negative case.
+// These make the product's central claim — "it shows you every path and touches nothing else" —
+// checkable rather than asserted. Do not weaken them to make a scanner pass.
+
+/// Runs `body` against a fresh scratch tree. Swallows throws into the failure log so each
+/// check reads as a straight sequence of assertions rather than a chain of `try`.
+func withFixture(_ body: (Fixture) throws -> Void) {
+    guard let f = try? Fixture() else { return Harness.fail("could not create fixture", 0) }
+    defer { f.cleanup() }
+    do { try body(f) } catch { Harness.fail("threw unexpectedly: \(error)", 0) }
+}
+
+// MARK: invariant 1 — confined to the enumerated root
+
+Harness.test("candidate outside the root is rejected") {
+    withFixture { f in
+        let root = try f.dir("root")
+        let outside = try f.dir("elsewhere/victim")
+        Harness.expectViolation("notDescendantOfRoot") {
+            if case .notDescendantOfRoot = $0 { return true }; return false
+        } _: {
+            try SafetyGuard.validate(Candidate(scannerID: "t", url: outside, root: root, kind: .homeCache))
+        }
+        Harness.expect(f.exists(outside), "guard must not touch anything")
+    }
+}
+
+Harness.test("the root itself is rejected") {
+    withFixture { f in
+        let root = try f.dir("root")
+        Harness.expectViolation("isRootItself") {
+            if case .isRootItself = $0 { return true }; return false
+        } _: {
+            try SafetyGuard.validate(Candidate(scannerID: "t", url: root, root: root, kind: .homeCache))
+        }
+    }
+}
+
+Harness.test("a descendant of the root is accepted") {
+    withFixture { f in
+        let root = try f.dir("root")
+        let child = try f.dir("root/DerivedData-abc123")
+        try SafetyGuard.validate(Candidate(scannerID: "t", url: child, root: root, kind: .homeCache))
+    }
+}
+
+// MARK: invariant 2 — symlinks may not escape the root
+
+Harness.test("symlink escaping the root is rejected") {
+    withFixture { f in
+        let root = try f.dir("root")
+        let precious = try f.dir("precious")
+        try f.file("precious/irreplaceable.txt", "do not delete")
+        let bait = try f.link("root/looks-innocent", to: precious)
+        Harness.expectViolation("escapesRootViaSymlink") {
+            if case .escapesRootViaSymlink = $0 { return true }; return false
+        } _: {
+            try SafetyGuard.validate(Candidate(scannerID: "t", url: bait, root: root, kind: .homeCache))
+        }
+        Harness.expect(f.exists(precious), "symlink target must be untouched")
+    }
+}
+
+Harness.test("symlink staying inside the root is accepted") {
+    withFixture { f in
+        let root = try f.dir("root")
+        let real = try f.dir("root/real")
+        let alias = try f.link("root/alias", to: real)
+        try SafetyGuard.validate(Candidate(scannerID: "t", url: alias, root: root, kind: .homeCache))
+    }
+}
+
+// MARK: invariant 3 — never a repository
+
+Harness.test("directory containing .git is rejected") {
+    withFixture { f in
+        let root = try f.dir("root")
+        let repo = try f.dir("root/some-project")
+        try f.dir("root/some-project/.git")
+        Harness.expectViolation("containsGitRepository") {
+            if case .containsGitRepository = $0 { return true }; return false
+        } _: {
+            try SafetyGuard.validate(Candidate(scannerID: "t", url: repo, root: root, kind: .homeCache))
+        }
+    }
+}
+
+// MARK: invariant 4 — a name match is never enough
+
+Harness.test("node_modules without package.json is not emitted") {
+    withFixture { f in
+        let root = try f.dir("ws")
+        try f.dir("ws/not-really/node_modules/deep")
+        let found = try ProjectTreeScanner(root: root).enumerate()
+        Harness.expect(found.isEmpty, "matched on directory name alone: \(found.map(\.url.path))")
+    }
+}
+
+Harness.test("node_modules with package.json is emitted, with its justification") {
+    withFixture { f in
+        let root = try f.dir("ws")
+        try f.file("ws/app/package.json", "{}")
+        let nm = try f.dir("ws/app/node_modules/left-pad")
+        let found = try ProjectTreeScanner(root: root).enumerate()
+        Harness.expectEqual(found.count, 1, "candidate count")
+        Harness.expectEqual(found.first?.url.lastPathComponent, "node_modules")
+        Harness.expectEqual(found.first?.justification?.lastPathComponent, "package.json")
+        Harness.expect(f.exists(nm), "scanning must never modify anything")
+        if let c = found.first { try SafetyGuard.validate(c) }
+    }
+}
+
+Harness.test("rust target/ without Cargo.toml is not emitted") {
+    withFixture { f in
+        let root = try f.dir("ws")
+        try f.dir("ws/somedir/target/release")
+        Harness.expect(try ProjectTreeScanner(root: root).enumerate().isEmpty, "matched target/ with no Cargo.toml")
+    }
+}
+
+Harness.test("rust target/ with Cargo.toml is emitted") {
+    withFixture { f in
+        let root = try f.dir("ws")
+        try f.file("ws/crate/Cargo.toml", "[package]")
+        try f.dir("ws/crate/target/release")
+        Harness.expectEqual(try ProjectTreeScanner(root: root).enumerate().map(\.scannerID), ["rust"])
+    }
+}
+
+Harness.test("project artifact with no justification is rejected") {
+    withFixture { f in
+        let root = try f.dir("ws")
+        let nm = try f.dir("ws/app/node_modules")
+        Harness.expectViolation("missingMarkerFile") {
+            if case .missingMarkerFile = $0 { return true }; return false
+        } _: {
+            try SafetyGuard.validate(Candidate(scannerID: "node", url: nm, root: root,
+                                               kind: .projectArtifact, justification: nil))
+        }
+    }
+}
+
+Harness.test("a marker from another directory is rejected") {
+    withFixture { f in
+        let root = try f.dir("ws")
+        let nm = try f.dir("ws/app/node_modules")
+        let stray = try f.file("ws/other/package.json", "{}")
+        Harness.expectViolation("markerNotASibling") {
+            if case .markerNotASibling = $0 { return true }; return false
+        } _: {
+            try SafetyGuard.validate(Candidate(scannerID: "node", url: nm, root: root,
+                                               kind: .projectArtifact, justification: stray))
+        }
+    }
+}
+
+Harness.test("scanner never descends into .git") {
+    withFixture { f in
+        let root = try f.dir("ws")
+        try f.file("ws/repo/package.json", "{}")
+        try f.dir("ws/repo/.git/node_modules")   // decoy inside repository metadata
+        let found = try ProjectTreeScanner(root: root).enumerate()
+        Harness.expect(!found.contains { $0.url.pathComponents.contains(".git") },
+                       "descended into .git: \(found.map(\.url.path))")
+    }
+}
+
+// MARK: invariant 5 — deletion is guarded, batched atomically, and goes to the Trash
+
+Harness.test("deleter removes nothing when validation fails") {
+    withFixture { f in
+        let root = try f.dir("root")
+        let outside = try f.dir("elsewhere/victim")
+        let spy = SpyRemover()
+        do {
+            try Deleter(remover: spy).delete(
+                Candidate(scannerID: "t", url: outside, root: root, kind: .homeCache))
+            Harness.expect(false, "delete succeeded on an out-of-root candidate")
+        } catch {}
+        Harness.expect(spy.removed.isEmpty, "remover was called despite a safety violation")
+    }
+}
+
+Harness.test("a batch with one bad candidate removes nothing at all") {
+    withFixture { f in
+        let root = try f.dir("root")
+        let good = try f.dir("root/good")
+        let bad = try f.dir("elsewhere/bad")
+        let spy = SpyRemover()
+        do {
+            try Deleter(remover: spy).delete([
+                Candidate(scannerID: "t", url: good, root: root, kind: .homeCache),
+                Candidate(scannerID: "t", url: bad,  root: root, kind: .homeCache),
+            ])
+            Harness.expect(false, "batch succeeded with an invalid member")
+        } catch {}
+        Harness.expect(spy.removed.isEmpty, "a partially-valid batch must not half-execute")
+    }
+}
+
+Harness.test("a valid candidate reaches the remover") {
+    withFixture { f in
+        let root = try f.dir("root")
+        let child = try f.dir("root/derived-abc")
+        let spy = SpyRemover()
+        try Deleter(remover: spy).delete(
+            Candidate(scannerID: "t", url: child, root: root, kind: .homeCache))
+        Harness.expectEqual(spy.removed.map(\.lastPathComponent), ["derived-abc"])
+    }
+}
+
+// MARK: sizing
+
+Harness.test("size ignores symlinked content") {
+    withFixture { f in
+        let root = try f.dir("root")
+        let big = try f.dir("big")
+        try f.file("big/payload", String(repeating: "a", count: 400_000))
+        _ = try f.link("root/link", to: big)
+        let size = SizeCalculator.allocatedSize(of: root)
+        Harness.expect(size < 100_000, "symlinked content inflated the figure: \(size) bytes")
+    }
+}
+
+// MARK: home cache scanner
+
+Harness.test("home cache scanner emits children, never the root") {
+    withFixture { f in
+        let cache = try f.dir("DerivedData")
+        try f.dir("DerivedData/App-abc")
+        try f.dir("DerivedData/App-def")
+        let found = try HomeCacheScanner(id: "x", displayName: "x", root: cache).enumerate()
+        Harness.expectEqual(Set(found.map(\.url.lastPathComponent)), ["App-abc", "App-def"])
+        Harness.expect(!found.contains { $0.url == cache }, "emitted the cache root itself")
+        for c in found { try SafetyGuard.validate(c) }
+    }
+}
+
+Harness.test("home cache scanner on a missing directory returns empty") {
+    withFixture { f in
+        let missing = f.root.appendingPathComponent("nope")
+        Harness.expectEqual(try HomeCacheScanner(id: "x", displayName: "x", root: missing).enumerate().count, 0)
+    }
+}
+
+Harness.report()

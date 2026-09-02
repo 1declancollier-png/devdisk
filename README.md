@@ -1,0 +1,42 @@
+# devdisk
+
+Finds the developer build artifacts and package caches eating your disk — and shows you every
+path before it deletes anything.
+
+Working name. See `SPEC.md` §10 before shipping under it.
+
+## Status
+
+- **Phase 0** ✅ — needs no Full Disk Access. Proven, not assumed: `tools/phase0/`
+- **Phase 1** ✅ — scanner core + 19 safety checks, mutation-tested
+- **Phase 2** — UI, dry-run only
+- **Phase 3** — deletion (move to Trash, per-item selection)
+- **Phase 4** — Docker + project scanners
+- **Phase 5** — ship
+
+## Run it
+
+```
+swift run devdisk-scan                    # dry run, home caches only
+swift run devdisk-scan ~/Developer        # plus a project tree
+swift run devdisk-selftest                # the safety gate; non-zero exit on failure
+```
+
+`devdisk-scan` has no delete path compiled in. `Deleter` lives in the library, guarded by
+`SafetyGuard`, and nothing calls it yet.
+
+## The five invariants
+
+Every one is an executable check in `Sources/devdisk-selftest`:
+
+1. Never touch a path that is not a strict descendant of an enumerated root
+2. Never follow a symlink out of that root
+3. Never delete a directory containing `.git`
+4. Never match a build artifact by directory name alone — a sibling marker file is required
+5. Deletion is validated first, batched atomically, and goes to the Trash
+
+## Documents
+
+- `SPEC.md` — the build contract: scope, non-goals, phases, gates
+- `DECISIONS.md` — append-only, why things are the way they are
+- `RESEARCH.md` — competitive landscape, fact-checked; read before arguing with the non-goals

@@ -1,0 +1,11 @@
+context=fresh-app-bundle  bundle=com.devdisk.phase0probe.1788311285
+OK       [target] DerivedData — listed 2, descended ok
+OK       [target] CoreSimulator — listed 1, read child ok
+OK       [target] swiftpm cache — listed 4, read child ok
+OK       [target] npm cacache — listed 3, descended ok
+OK       [target] cargo cache — listed 0
+OK       [target] Library/Caches — listed 90, descended ok
+OK       [target] Library/Developer — listed 4, descended ok
+DENIED   [control-fda] CONTROL TCC dir — NSCocoaErrorDomain 257
+DENIED   [control-fda] CONTROL Safari — NSCocoaErrorDomain 257
+OK       [control-mixed] CONTROL Containers — listed 735, descended ok
