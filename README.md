@@ -85,4 +85,5 @@ Every one is an executable check in `Sources/devdisk-selftest`:
 - `PROMISE.md` — what stays free, dated
 - `LIMITATIONS.md` — what it doesn't do, written before anyone asked
 - `NAMING.md` — why it's called this
+- `docs/` — reference pages, useful without installing anything
 - `RESEARCH.md` — competitive landscape, fact-checked; read before arguing with the non-goals

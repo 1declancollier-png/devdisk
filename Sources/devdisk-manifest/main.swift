@@ -75,3 +75,93 @@ Run `swift run devdisk-selftest` to verify these yourself.
 
 let dest = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : "MANIFEST.md"
 try out.write(toFile: dest, atomically: true, encoding: .utf8)
+
+// The same definitions, rendered for humans who are searching a symptom rather than a category.
+// This page is the manifest made useful — which is the point: it argues the claim by being
+// worth reading even if you never install anything.
+var docs = """
+# Every developer cache directory on macOS, and what regenerates it
+
+Your disk is full and you want to know what is safe to delete. Here is the complete list for a
+Mac with developer tools on it, what each thing is, and — the part nobody publishes — **what you
+lose and what brings it back.**
+
+Measure before you delete anything:
+
+```
+du -sh ~/Library/Developer/Xcode/DerivedData ~/.npm ~/.cargo ~/.gradle 2>/dev/null
+```
+
+| Path | Tool | What you lose |
+|---|---|---|
+
+"""
+for d in HomeCacheScanner.definitions {
+    docs += "| `~/\(d.relativePath)` | \(d.tool) | \(d.regeneratedBy) |\n"
+}
+docs += """
+
+## Per-project artifacts
+
+These live inside your own projects. Find them before you delete them — and note `-prune`,
+without which you recurse into nested copies and the sizes come out wrong:
+
+```
+find ~/code -type d -name node_modules -prune -print0 | xargs -0 du -sh | sort -h
+```
+
+The safer version, which only touches projects you have not opened in three months:
+
+```
+find ~/code -type d -name node_modules -prune -mtime +90 -print
+```
+
+| Directory | Only when this sits beside it | Tool |
+|---|---|---|
+
+"""
+for r in ProjectRule.all {
+    docs += "| `\(r.directoryName)/` | \(r.markers.map { "`\($0)`" }.joined(separator: " or ")) | \(r.scannerID) |\n"
+}
+docs += """
+
+The marker file matters. A directory called `target` is only a Rust build directory if there is
+a `Cargo.toml` next to it — otherwise it is somebody's source folder, and deleting it by name is
+how people lose work.
+
+## Large things that are NOT caches — do not delete these
+
+The biggest directories on a developer's Mac are usually not caches at all, and every
+"reclaim your disk" article that ranks them by size gets this wrong.
+
+| Path | Why it looks tempting | Why you should not |
+|---|---|---|
+| `~/.rustup` | routinely over 1 GB | Installed Rust toolchains. Deleting it uninstalls your compilers. Use `rustup toolchain list` and remove old ones individually |
+| `~/.nvm` | hundreds of MB | Installed Node versions. Use `nvm uninstall <version>` |
+| `~/Library/Android/sdk` | several GB | SDK platforms and system images you actually build against |
+| `~/.android/avd` | several GB | Your emulator disk images, with their state |
+| `~/Library/Developer/Xcode/Archives` | grows forever | **Your shipped dSYMs.** You need these to symbolicate crash reports from released builds |
+
+## Two things that will waste your afternoon
+
+**The Trash does not free space.** Moving 60 GB to the Trash reclaims zero bytes until you empty
+it. This catches everybody.
+
+**APFS local snapshots hold space even after that.** If Time Machine has taken one, the number
+will not move:
+
+```
+tmutil listlocalsnapshots /
+```
+
+Finder's "Available" figure includes purgeable space, which is why it often disagrees with `df`.
+
+---
+
+*This table is generated from the source of [devdisk](https://github.com/OWNER/devdisk), a Mac
+tool that scans exactly these paths and shows you every one before deleting anything. The
+machine-readable version is [MANIFEST.md](../MANIFEST.md), and CI fails if it drifts from the
+code. You do not need the tool to use this page.*
+
+"""
+try docs.write(toFile: "docs/mac-developer-cache-directories.md", atomically: true, encoding: .utf8)
