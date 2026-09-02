@@ -34,3 +34,10 @@ to open the Trash; it never uses the words "freed" or "reclaimed" for something 
 **APFS snapshots can hold the space even after that.** If Time Machine has taken a local
 snapshot, emptying the Trash may still not move the number. `tmutil listlocalsnapshots /` shows
 them. That is outside this tool's scope and it will not touch them.
+
+**It deliberately ignores the biggest directory on most Rust machines.** `~/.rustup` is commonly
+over a gigabyte, and it is not a cache — it holds your installed toolchains. Deleting it
+uninstalls your compilers. Only `~/.rustup/downloads` and `~/.rustup/tmp` are in the manifest.
+Use `rustup toolchain list` and remove old toolchains yourself if you want the rest of that
+space. The same reasoning excludes `~/.nvm`, `~/Library/Android/sdk` and `~/.android/avd`:
+large, tempting, and not caches.

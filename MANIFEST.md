@@ -18,6 +18,14 @@ Each entry is scanned for its **immediate children**. The directory itself is ne
 | `xcode-derived` | `~/Library/Developer/Xcode/DerivedData` |
 | `xcode-archives` | `~/Library/Developer/Xcode/Archives` |
 | `xcode-devsupport` | `~/Library/Developer/Xcode/iOS DeviceSupport` |
+| `xcode-previews` | `~/Library/Developer/Xcode/UserData/Previews` |
+| `xcode-doccache` | `~/Library/Developer/Xcode/DocumentationCache` |
+| `xcode-logs` | `~/Library/Developer/Xcode/Products` |
+| `macos-devsupport` | `~/Library/Developer/Xcode/macOS DeviceSupport` |
+| `watchos-devsupport` | `~/Library/Developer/Xcode/watchOS DeviceSupport` |
+| `tvos-devsupport` | `~/Library/Developer/Xcode/tvOS DeviceSupport` |
+| `visionos-devsupport` | `~/Library/Developer/Xcode/visionOS DeviceSupport` |
+| `simulator-caches` | `~/Library/Developer/CoreSimulator/Caches` |
 | `swiftpm` | `~/Library/Caches/org.swift.swiftpm` |
 | `cocoapods` | `~/Library/Caches/CocoaPods` |
 | `npm` | `~/.npm/_cacache` |
@@ -28,6 +36,18 @@ Each entry is scanned for its **immediate children**. The directory itself is ne
 | `go-build` | `~/Library/Caches/go-build` |
 | `gradle` | `~/.gradle/caches` |
 | `maven` | `~/.m2/repository` |
+| `npx` | `~/.npm/_npx` |
+| `node-gyp` | `~/Library/Caches/node-gyp` |
+| `homebrew` | `~/Library/Caches/Homebrew` |
+| `xcode-appcache` | `~/Library/Caches/com.apple.dt.Xcode` |
+| `cargo-src` | `~/.cargo/registry/src` |
+| `rustup-downloads` | `~/.rustup/downloads` |
+| `rustup-tmp` | `~/.rustup/tmp` |
+| `bun` | `~/.bun/install/cache` |
+| `deno` | `~/Library/Caches/deno` |
+| `playwright` | `~/Library/Caches/ms-playwright` |
+| `puppeteer` | `~/.cache/puppeteer` |
+| `pnpm` | `~/Library/pnpm/store` |
 | `cargo` | `~/.cargo/registry/cache` |
 
 ## Project build artifacts

@@ -189,3 +189,31 @@ outcome (get the space back). Both are kept, and the tension is stated rather th
 
 Considered and rejected: emptying the Trash on the user's behalf. That would destroy the
 recoverability the product is sold on, and the Trash contains things this app did not put there.
+
+## 2026-09-02 — Coverage widened to 34 caches. Breadth is the answer to DevCleaner.
+
+DevCleaner for Xcode is free on the Mac App Store, signed, sandboxed, and ships a CLI — a
+stronger *verifiable trust* position than a published manifest, since sandboxing is enforced by
+the OS rather than promised by the author. Checked its listing directly: it is **Xcode-only**.
+No node_modules, npm, cargo, gradle, pip, Docker or Homebrew.
+
+So the wedge is not trust alone — it is **breadth with trust**. Trust is what makes breadth
+safe to accept from an unknown developer; breadth is what DevCleaner cannot match without
+leaving the sandbox, which would cost it the very thing that makes it trustworthy. That tension
+is the defensible position.
+
+Added the Xcode caches DevCleaner covered and this did not (SwiftUI previews, documentation
+cache, per-platform DeviceSupport, simulator caches), then surveyed a real machine for gaps and
+added npx, node-gyp, Homebrew, Cargo extracted sources, Bun, Deno, Playwright, Puppeteer, pnpm,
+and rustup's scratch directories. Coverage went from 14 to 34, and the reported figure on this
+machine from 324 KB to 682 MB.
+
+**The most important entry is one that is deliberately absent.** `~/.rustup` was 1.3 GB — the
+single largest directory found — and it is not a cache. It holds installed toolchains, and
+removing it uninstalls the user's compilers. Only `~/.rustup/downloads` and `~/.rustup/tmp` are
+in the manifest. `~/.nvm`, `~/Library/Android/sdk` and `~/.android/avd` are excluded for the
+same reason: large, tempting, not caches. A tool that chased the biggest number would have taken
+all four, and that is exactly the behaviour this product exists to not have.
+
+**First real deletion happened, by the owner, and worked.** `~/.npm/_cacache` is empty and the
+items are in the Trash.
