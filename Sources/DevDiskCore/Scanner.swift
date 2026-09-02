@@ -36,9 +36,26 @@ public struct HomeCacheScanner: Scanner {
         }
     }
 
+    /// One entry per cache location. This list is the single source of truth for both the
+    /// scanners and the published delete-path manifest — MANIFEST.md is generated from it, so
+    /// the document and the behaviour cannot drift apart.
+    public struct Definition: Sendable {
+        public let id: String
+        public let displayName: String
+        /// Relative to the user's home directory.
+        public let relativePath: String
+    }
+
+    public static let definitions: [Definition] = rawDefinitions.map {
+        Definition(id: $0.0, displayName: $0.1, relativePath: $0.2)
+    }
+
     /// The cache locations verified readable without any permission in Phase 0.
     public static func standardSet(home: URL = FileManager.default.homeDirectoryForCurrentUser) -> [HomeCacheScanner] {
-        let d: [(String, String, String)] = [
+        definitions.map { HomeCacheScanner(id: $0.id, displayName: $0.displayName, root: home.appendingPathComponent($0.relativePath)) }
+    }
+
+    private static let rawDefinitions: [(String, String, String)] = [
             ("xcode-derived",   "Xcode DerivedData",        "Library/Developer/Xcode/DerivedData"),
             ("xcode-archives",  "Xcode Archives",           "Library/Developer/Xcode/Archives"),
             ("xcode-devsupport","Xcode iOS DeviceSupport",  "Library/Developer/Xcode/iOS DeviceSupport"),
@@ -53,9 +70,7 @@ public struct HomeCacheScanner: Scanner {
             ("gradle",          "Gradle cache",             ".gradle/caches"),
             ("maven",           "Maven repository",         ".m2/repository"),
             ("cargo",           "Cargo registry cache",     ".cargo/registry/cache"),
-        ]
-        return d.map { HomeCacheScanner(id: $0.0, displayName: $0.1, root: home.appendingPathComponent($0.2)) }
-    }
+    ]
 }
 
 /// Walks a user-selected project tree. Matches only directories whose name is in `ProjectRule`

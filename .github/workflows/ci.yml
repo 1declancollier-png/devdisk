@@ -1,0 +1,16 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  verify:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: swift build -c release
+      - name: Safety invariants
+        run: swift run -c release devdisk-selftest
+      - name: Delete-path manifest matches the code
+        run: ./Scripts/check-manifest.sh
+      - name: App bundle builds without Xcode
+        run: ./Scripts/bundle.sh

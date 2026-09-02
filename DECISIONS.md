@@ -138,3 +138,16 @@ same folder repeatedly and never delete it. Both sides are now normalised. This 
 anyone whose projects live under a symlinked path.
 
 28 checks, up from 22.
+
+## 2026-09-01 — Phase 5 blocked on an Apple Developer account; manifest done anyway.
+
+Developer ID signing and notarization need the $99/yr account, which does not exist yet.
+Without it macOS Gatekeeper blocks the download outright, so distribution cannot proceed.
+Sparkle, hash publication and the signed-build gate all wait on that purchase.
+
+The one Phase 5 item that needs no account is done, and it is the most important one:
+**MANIFEST.md is generated from the scanner definitions, not written by hand.**
+`HomeCacheScanner.definitions` and `ProjectRule.all` are now the single source of truth for
+both the scanners and the published document, so the two cannot drift.
+`Scripts/check-manifest.sh` regenerates and diffs; verified it rejects a tampered manifest.
+Wired into CI alongside the 28 safety checks and a no-Xcode bundle build.

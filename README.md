@@ -12,7 +12,7 @@ Working name. See `SPEC.md` §10 before shipping under it.
 - **Phase 2** ✅ — SwiftUI app, dry-run only, builds without Xcode
 - **Phase 3** ✅ — deletion: per-item selection, move to Trash, all-or-nothing batches
 - **Phase 4** ✅ — Docker report, remembered project folders
-- **Phase 5** — ship
+- **Phase 5** — ship (blocked: needs an Apple Developer account). Manifest + CI done.
 
 ## Run it
 
@@ -43,4 +43,5 @@ Every one is an executable check in `Sources/devdisk-selftest`:
 
 - `SPEC.md` — the build contract: scope, non-goals, phases, gates
 - `DECISIONS.md` — append-only, why things are the way they are
+- `MANIFEST.md` — every path the app can ever delete, generated from the code
 - `RESEARCH.md` — competitive landscape, fact-checked; read before arguing with the non-goals

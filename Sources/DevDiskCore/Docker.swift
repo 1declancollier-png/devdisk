@@ -15,7 +15,9 @@ public struct DockerReport: Sendable, Equatable {
     public var reclaimable: Int64 { lines.reduce(0) { $0 + $1.reclaimable } }
 
     /// The exact command the user would run. v1 shows this and does not execute it.
-    public var pruneCommand: String { "docker system prune --all --volumes" }
+    /// Static so the manifest generator can quote it without fabricating a report.
+    public static let pruneCommand = "docker system prune --all --volumes"
+    public var pruneCommand: String { Self.pruneCommand }
 }
 
 public enum DockerProbe {
