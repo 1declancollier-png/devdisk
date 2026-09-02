@@ -14,7 +14,17 @@ Working name. See `SPEC.md` §10 before shipping under it.
 - **Phase 4** ✅ — Docker report, remembered project folders
 - **Phase 5** — ship (blocked: needs an Apple Developer account). Manifest + CI done.
 
-## Run it
+## Install
+
+```
+brew install OWNER/tap/devdisk
+devdisk ~/Developer
+```
+
+Builds from source, so it needs no code signing and never meets Gatekeeper. The `.app` is a
+separate download once it is notarized.
+
+## Run it from a checkout
 
 ```
 swift run devdisk-scan                    # dry run, home caches only
